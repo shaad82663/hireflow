@@ -1,6 +1,7 @@
 from functools import lru_cache
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic import SecretStr
 
 
 class Settings(BaseSettings):
@@ -16,13 +17,15 @@ class Settings(BaseSettings):
 
     company_name: str = "Acme Robotics"
     company_url: str = "https://example.com"
+    company_country: str = "IN" 
 
     # LLM settings (used from Part 3)
-    llm_provider: str = "bedrock_converse"  # bedrock_converse | openai
+    llm_provider: str = "openai"  # bedrock_converse | openai
     llm_model: str = "set-me-in-.env"
-    llm_temperature: float = 0.0
+    llm_temperature: float | None = 0.0  # None = use the model's own default
     aws_region: str = "us-east-1"
-
+    openai_api_key: SecretStr | None = None
+    anthropic_api_key: SecretStr  | None = None
 
 @lru_cache
 def get_settings() -> Settings:

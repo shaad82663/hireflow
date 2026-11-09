@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Careers{% endblock %} · {{ company }}</title>
+  <style>
+    :root { --bg:#f6f7f9; --card:#fff; --ink:#1d2433; --muted:#5b6475; --accent:#2f6fde; --line:#e3e6ec; }
+    * { box-sizing: border-box; }
+    body { margin:0; background:var(--bg); color:var(--ink); font:16px/1.6 system-ui, sans-serif; }
+    header { background:var(--card); border-bottom:1px solid var(--line); padding:18px 24px; }
+    header a { color:var(--ink); text-decoration:none; font-weight:700; }
+    main { max-width:820px; margin:32px auto; padding:0 16px; }
+    .card { background:var(--card); border:1px solid var(--line); border-radius:10px; padding:20px; }
+    .stack { display:grid; gap:12px; }
+    .meta { color:var(--muted); font-size:14px; }
+    .pill { display:inline-block; padding:2px 10px; border-radius:99px; background:#eaf1fd; color:var(--accent); font-size:13px; }
+    a.job { color:var(--accent); font-weight:600; font-size:18px; text-decoration:none; }
+  </style>
+  {% block head %}{% endblock %}
+</head>
+<body>
+  <header><a href="/careers">{{ company }} · Careers</a></header>
+  <main>{% block content %}{% endblock %}</main>
+</body>
+</html>

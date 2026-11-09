@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}Open roles{% endblock %}
+{% block content %}
+  <h1>Open roles</h1>
+  <div class="stack">
+    {% for job in jobs %}
+      <div class="card">
+        <a class="job" href="/careers/{{ job.slug }}">{{ job.title }}</a>
+        <div class="meta">{{ job.location }}{% if job.remote %} · Remote{% endif %} · {{ job.employment_type.value | replace("_", " ") | title }}</div>
+      </div>
+    {% else %}
+      <p class="meta">No open roles right now. Check back soon.</p>
+    {% endfor %}
+  </div>
+{% endblock %}

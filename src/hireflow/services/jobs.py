@@ -10,7 +10,7 @@ from hireflow.schemas.job import JobCreate, JobUpdate
 
 class JobNotFoundError(Exception):
     def __init__(self, job_id: int | str) -> None:
-        super().__init__(f"job {job_id} Not Found")
+        super().__init__(f"Job {job_id} not found")
         self.job_id = job_id
 
 class JobNotOpenError(Exception):
