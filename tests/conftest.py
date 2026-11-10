@@ -44,3 +44,9 @@ def job_payload() -> dict:
         "must_have": ["Python", " FastAPI ", "python", ""],
         "nice_to_have": ["AWS"],
     }
+
+@pytest.fixture
+async def open_job(client, job_payload) -> dict:
+    """A job that is already open, so candidates can apply."""
+    job = (await client.post("/api/jobs", json=job_payload)).json()
+    return (await client.patch(f"/api/jobs/{job['id']}", json={"status": "open"})).json()
