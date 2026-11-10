@@ -18,6 +18,11 @@ class JobNotOpenError(Exception):
         super().__init__(f"Job {job_id} is not open, so it cannot be closed")
         self.job_id = job_id
 
+class JobNotDraftError(Exception):
+    def __init__(self, job_id: int) -> None:
+        super().__init__(f"Job {job_id} is not drafted, so it cannot be opened")
+        self.job_id = job_id
+
 def slugify(text: str) -> str:
     """'Senior Python Engineer!' -> 'senior-python-engineer'"""
     text = re.sub(r"[^a-z0-9]+", "-", text.lower())
@@ -65,10 +70,19 @@ async def delete_job(session: AsyncSession, job_id: int) -> None:
     await session.commit()
 
 
-async def close_job(session, job_id):
+async def close_job(session: AsyncSession, job_id: int) -> Job:
     job = await get_job(session, job_id)
     if job.status is not JobStatus.OPEN:
         raise JobNotOpenError(job_id)
+    setattr(job, "status", JobStatus.CLOSED)
+    await session.commit()
+    await session.refresh(job)
+    return job
+
+async def publish_job(session: AsyncSession, job_id: int) -> Job:
+    job = await get_job(session, job_id)
+    if job.status is not JobStatus.DRAFT:
+        raise JobNotDraftError(job_id)
     setattr(job, "status", JobStatus.CLOSED)
     await session.commit()
     await session.refresh(job)
