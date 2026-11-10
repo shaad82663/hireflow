@@ -3,7 +3,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from hireflow.models.job import JobStatus
 from hireflow.services import jobs as job_service
-from hireflow.services.jobs import JobNotFoundError, JobNotDraftError
+from hireflow.services.jobs import JobNotDraftError, JobNotFoundError, JobNotOpenError
 
 
 def build_job_tools(session_factory: async_sessionmaker[AsyncSession]) -> list[BaseTool]:
@@ -43,7 +43,7 @@ def build_job_tools(session_factory: async_sessionmaker[AsyncSession]) -> list[B
         async with session_factory() as session:
             try:
                 job = await job_service.close_job(session, job_id)
-            except (JobNotFoundError, ValueError) as e:
+            except (JobNotFoundError, JobNotOpenError) as e:
                 return {"error": str(e)}
         return {"id": job.id, "status": job.status.value}
 
@@ -53,7 +53,7 @@ def build_job_tools(session_factory: async_sessionmaker[AsyncSession]) -> list[B
         async with session_factory() as session:
             try:
                 job = await job_service.publish_job(session, job_id)
-            except (JobNotDraftError, ValueError) as e:
+            except (JobNotFoundError, JobNotDraftError) as e:
                 return {"error": str(e)}
         return {"id": job.id, "status": job.status.value}
 

@@ -15,7 +15,7 @@ class JobNotFoundError(Exception):
 
 class JobNotOpenError(Exception):
     def __init__(self, job_id: int) -> None:
-        super().__init__(f"Job {job_id} is not open, so it cannot be closed")
+        super().__init__("Only open jobs can be closed")
         self.job_id = job_id
 
 class JobNotDraftError(Exception):
@@ -83,7 +83,7 @@ async def publish_job(session: AsyncSession, job_id: int) -> Job:
     job = await get_job(session, job_id)
     if job.status is not JobStatus.DRAFT:
         raise JobNotDraftError(job_id)
-    setattr(job, "status", JobStatus.CLOSED)
+    setattr(job, "status", JobStatus.OPEN)
     await session.commit()
     await session.refresh(job)
     return job

@@ -1,7 +1,7 @@
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 
-from hireflow.api.routes import  health, jobs, drafts
+from hireflow.api.routes import assistant, drafts, health, jobs
 from hireflow.core.config import get_settings
 from hireflow.core.logging import setup_logging
 from hireflow.services.jobs import JobNotFoundError
@@ -22,6 +22,7 @@ def create_app() -> FastAPI:
     app.include_router(jobs.router)
     app.include_router(web_routes.router)
     app.include_router(drafts.router)
+    app.include_router(assistant.router)
     return app
 
 app = create_app()

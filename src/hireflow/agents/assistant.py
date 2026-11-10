@@ -16,7 +16,7 @@ Rules:
 
 class AssistantReply(BaseModel):
     reply: str
-    tool_used: list[str]
+    tools_used: list[str]
 
 
 async def ask(model: BaseChatModel, tools: list[BaseTool], message: str) -> AssistantReply:
@@ -28,4 +28,4 @@ async def ask(model: BaseChatModel, tools: list[BaseTool], message: str) -> Assi
     )
     messages = result["messages"]
     used = [c['name'] for m in messages if isinstance(m, AIMessage) for c in m.tool_calls]
-    return AssistantReply(reply=messages[-1].text, tool_used=used)
+    return AssistantReply(reply=messages[-1].text, tools_used=used)
