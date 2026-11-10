@@ -49,7 +49,8 @@ def build_job_tools(session_factory: async_sessionmaker[AsyncSession]) -> list[B
 
     @tool
     async def publish_job(job_id: int) -> dict:
-        """Publish a drafted job"""
+        """Publish a DRAFT job so it becomes open and accepts applications. 
+        Only use this when the recruiter clearly asks to publish that specific job."""
         async with session_factory() as session:
             try:
                 job = await job_service.publish_job(session, job_id)
@@ -57,4 +58,4 @@ def build_job_tools(session_factory: async_sessionmaker[AsyncSession]) -> list[B
                 return {"error": str(e)}
         return {"id": job.id, "status": job.status.value}
 
-    return [list_jobs, get_job_details, close_job]
+    return [list_jobs, get_job_details, close_job, publish_job]
