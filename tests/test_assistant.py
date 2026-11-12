@@ -7,7 +7,7 @@ from hireflow.llm.client import get_chat_model
 
 
 async def test_list_jobs_tool_reads_the_database(open_job):
-    list_jobs, _, _ = build_job_tools(SessionLocal)
+    list_jobs, *_ = build_job_tools(SessionLocal)
     result = await list_jobs.ainvoke({"status": "open"})
     assert result == [
         {
@@ -21,7 +21,7 @@ async def test_list_jobs_tool_reads_the_database(open_job):
 
 async def test_tool_errors_come_back_as_data(client, job_payload):
     draft = (await client.post("/api/jobs", json=job_payload)).json()
-    _, get_job_details, close_job = build_job_tools(SessionLocal)
+    _, get_job_details, close_job, _ = build_job_tools(SessionLocal)
 
     assert await get_job_details.ainvoke({"job_id": 999}) == {"error": "Job 999 not found"}
     assert await close_job.ainvoke({"job_id": draft["id"]}) == {

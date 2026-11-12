@@ -1,11 +1,16 @@
 import os
 
-# Must be set BEFORE hireflow is imported, so the app uses a throwaway test database
-os.environ["DATABASE_URL"] = "sqlite+aiosqlite:///./test.db"
+# Must be set BEFORE hireflow is imported. From Part 5, tests use a real Postgres test database,
+# because vector search and full-text search only exist in Postgres.
+os.environ["DATABASE_URL"] = os.environ.get(
+    "TEST_DATABASE_URL", "postgresql+asyncpg://hireflow:hireflow@localhost:5432/hireflow_test"
+)
 os.environ["ENVIRONMENT"] = "test"
+os.environ["EMBEDDING_PROVIDER"] = "fake"  # instant, deterministic, no model download
 
 import pytest
 from httpx import ASGITransport, AsyncClient
+from sqlalchemy import text
 
 from hireflow.db.base import Base
 from hireflow.db.session import engine
@@ -16,6 +21,7 @@ from hireflow.main import create_app
 async def fresh_db():
     """Every test starts with empty tables."""
     async with engine.begin() as conn:
+        await conn.execute(text("CREATE EXTENSION IF NOT EXISTS vector"))
         await conn.run_sync(Base.metadata.drop_all)
         await conn.run_sync(Base.metadata.create_all)
     yield
@@ -44,6 +50,7 @@ def job_payload() -> dict:
         "must_have": ["Python", " FastAPI ", "python", ""],
         "nice_to_have": ["AWS"],
     }
+
 
 @pytest.fixture
 async def open_job(client, job_payload) -> dict:

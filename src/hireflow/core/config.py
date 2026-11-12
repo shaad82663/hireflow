@@ -1,4 +1,5 @@
 from functools import lru_cache
+from typing import Literal
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from pydantic import SecretStr
@@ -26,6 +27,13 @@ class Settings(BaseSettings):
     aws_region: str = "us-east-1"
     openai_api_key: SecretStr | None = None
     anthropic_api_key: SecretStr  | None = None
+
+    # Embeddings (used from Part 5). "local" runs a small free model on your machine.
+    embedding_provider: Literal["local", "openai", "fake"] = "local"
+    embedding_model: str = "BAAI/bge-small-en-v1.5"
+    embedding_dim: int = 384
+
+    max_resume_mb: int = 5
 
 @lru_cache
 def get_settings() -> Settings:
