@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block title %}Application received{% endblock %}
+{% block content %}
+  <div class="card stack">
+    <h1 style="margin:0">Thanks, {{ name }}!</h1>
+    <p>We received your application for <b>{{ job.title }}</b>. Our team will review it and get back to you.</p>
+    <p><a href="/careers">See other open roles</a></p>
+  </div>
+{% endblock %}

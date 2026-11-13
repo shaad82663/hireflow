@@ -17,4 +17,17 @@
       <div>{% for s in job.nice_to_have %}<span class="pill">{{ s }}</span> {% endfor %}</div>
     {% endif %}
   </div>
+
+  <form class="card stack" style="margin-top:20px" method="post"
+        action="/careers/{{ job.slug }}/apply" enctype="multipart/form-data">
+    <h2 style="margin:0">Apply for this role</h2>
+    {% if error %}<p class="error" role="alert">{{ error }}</p>{% endif %}
+    <label>Full name <input name="name" required minlength="2" value="{{ form.name if form else '' }}"></label>
+    <label>Email <input name="email" type="email" required value="{{ form.email if form else '' }}"></label>
+    <label>Resume (PDF, DOCX or TXT, max 5 MB)
+      <input name="resume" type="file" accept=".pdf,.docx,.txt" required></label>
+    <label class="consent"><input name="consent" type="checkbox" value="true" required>
+      I agree that {{ company }} may store and process my resume to evaluate my application.</label>
+    <button type="submit">Submit application</button>
+  </form>
 {% endblock %}

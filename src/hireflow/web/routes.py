@@ -1,19 +1,25 @@
 import json
 from pathlib import Path
+from typing import Annotated
 
-from fastapi import APIRouter, Request
+from fastapi import APIRouter, Form, Request, UploadFile
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
+from pydantic import EmailStr, TypeAdapter, ValidationError
 
-from hireflow.api.deps import SessionDep, SettingsDep
+from hireflow.api.deps import EmbeddingsDep, SessionDep, SettingsDep
 from hireflow.models.job import Job, JobStatus
+from hireflow.services import applications as app_service
 from hireflow.services import jobs as job_service
+from hireflow.services.applications import ConsentRequiredError, DuplicateApplicationError
+from hireflow.services.resume_parser import ResumeParseError
 
 TEMPLATES_DIR = Path(__file__).parent / "templates"
 templates = Jinja2Templates(directory=TEMPLATES_DIR)
 
 router = APIRouter(tags=["careers"], include_in_schema=False)
 
+_email_check = TypeAdapter(EmailStr)
 
 def job_posting_jsonld(job: Job, company_name: str, company_url: str) -> str:
     """Google for Jobs reads this block to list your job in Google Search for free."""
@@ -39,6 +45,12 @@ def job_posting_jsonld(job: Job, company_name: str, company_url: str) -> str:
     # escape "</" so a job description can never close the <script> tag early
     return json.dumps(data, ensure_ascii=False).replace("</", "<\\/")
 
+def _detail_page(request: Request, job: Job, settings, status_code: int = 200, **extra):
+    jsonld = job_posting_jsonld(
+        job, settings.company_name, settings.company_url
+    )
+    context = {"job": job, "company": settings.company_name, "jsonld": jsonld, **extra}
+    return templates.TemplateResponse(request, "job_detail.html", context, status_code=status_code)
 
 @router.get("/careers", response_class=HTMLResponse)
 async def careers_list(request: Request, session: SessionDep, settings: SettingsDep):
