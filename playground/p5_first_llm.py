@@ -11,7 +11,7 @@ from hireflow.llm.client import get_chat_model
 SYSTEM = "You are a concise recruiting assistant. Answer in at most 3 sentences."
 
 
-def ask(model: BaseChatModel, question: str) -> str:
+def ask_assistant(model: BaseChatModel, question: str) -> str:
     """1) Plain call: list of messages in, one AIMessage out."""
     messages = [SystemMessage(SYSTEM), HumanMessage(question)]
     reply = model.invoke(messages)
@@ -38,6 +38,6 @@ async def ask_many(model: BaseChatModel, questions: list[str]) -> list[str]:
 
 if __name__ == "__main__":
     llm = get_chat_model()
-    print(ask(llm, "What is a good first screening question for a backend engineer?"))
+    print(ask_assistant(llm, "What is a good first screening question for a backend engineer?"))
     stream(llm, "Explain 'notice period' to a candidate from Germany.")
     print(asyncio.run(ask_many(llm, ["Define ATS.", "Define CTC.", "Define JD."])))

@@ -1,9 +1,10 @@
 from datetime import datetime
 
 from fastapi import APIRouter
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
-from hireflow.api.deps import SessionDep
+from hireflow.agents.resume_qa import AnswerWithSources, answer_about_applicants
+from hireflow.api.deps import SessionDep, ModelDep, EmbeddingsDep
 from hireflow.models.application import ApplicationStage
 from hireflow.services import applications as  app_service
 from hireflow.services import jobs as job_service
@@ -17,6 +18,9 @@ class ApplicationRead(BaseModel):
     resume_filename: str
     stage: ApplicationStage
     created_at: datetime
+
+class AskRequest(BaseModel):
+    question: str = Field(min_length=3, max_length=500)
 
 
 @router.get("/{job_id}/applications", response_model=list[ApplicationRead])
@@ -34,3 +38,15 @@ async def list_applications(job_id: int, session: SessionDep):
         )
         for a in apps
     ]
+
+@router.post("/{job_id}/ask", response_model=AnswerWithSources)
+async def ask_about_applicants(
+    job_id: int,
+    payload: AskRequest,
+    session: SessionDep,
+    model: ModelDep,
+    embeddings: EmbeddingsDep,
+):
+    """Ask a question about this job's applicants. The answer cites resume excerpts."""
+    await job_service.get_job(session, job_id)
+    return await answer_about_applicants(model, session, embeddings, job_id, payload.question)

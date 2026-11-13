@@ -19,7 +19,7 @@ class AssistantReply(BaseModel):
     tools_used: list[str]
 
 
-async def ask(model: BaseChatModel, tools: list[BaseTool], message: str) -> AssistantReply:
+async def ask_assistant(model: BaseChatModel, tools: list[BaseTool], message: str) -> AssistantReply:
     """Run one agent turn: the agent may call several tools before it answers."""
     agent = create_agent(model, tools=tools, system_prompt=SYSTEM_PROMPT)
     result = await agent.ainvoke(

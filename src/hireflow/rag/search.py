@@ -34,6 +34,8 @@ async def vector_search(session: AsyncSession, query_vec: list[float], job_id: i
         .order_by(ResumeChunk.embedding.cosine_distance(query_vec))
         .limit(CANDIDATE_POOL)
     )
+    return list((await session.execute(stmt)).all())
+    
 
 async def keyword_search(session: AsyncSession, query: str, job_id: int) -> list:
     """Exact-word based: Postgres full-text search. Great for names like 'FastAPI' or 'AWS'."""
