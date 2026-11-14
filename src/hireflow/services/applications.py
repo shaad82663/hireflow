@@ -33,7 +33,6 @@ async def apply_to_job(
         """Parse the resume, save the application, and index it for search, in one transaction."""
         if not consent:
              raise ConsentRequiredError()
-        text = extract_text(filename, data)
         email = email.strip().lower()
         stmt = select(Candidate).where(Candidate.email == email)
         candidate = (await session.execute(stmt)).scalar_one_or_none()
@@ -49,7 +48,7 @@ async def apply_to_job(
             )
             if already.first() is not None:
                 raise DuplicateApplicationError()
-
+        text = extract_text(filename, data)
         application = Application(
             job_id = job.id,
             candidate_id = candidate.id,
@@ -58,7 +57,6 @@ async def apply_to_job(
             consent_given=True
         )
         session.add(application)
-
         chunks = chunk_text(text)
         vectors = await embeddings.aembed_documents(chunks)
         application.chunks = [
