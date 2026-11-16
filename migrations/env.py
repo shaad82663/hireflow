@@ -29,6 +29,13 @@ if config.config_file_name is not None:
 # target_metadata = mymodel.Base.metadata
 target_metadata = Base.metadata
 
+def include_object(object, name, type_, reflected, compare_to):
+    """Skip database objects that no model describes, e.g. LangGraph's checkpoint tables or
+    indexes created with raw SQL. Without this, autogenerate would try to DROP them."""
+    if reflected and compare_to is None:
+        return False
+    return True
+
 # other values from the config, defined by the needs of env.py,
 # can be acquired:
 # my_important_option = config.get_main_option("my_important_option")

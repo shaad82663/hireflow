@@ -1,0 +1,27 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "HireFlow API (debug)",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "uvicorn",
+      // no --reload: reload runs the app in a child process, where breakpoints are unreliable
+      "args": ["hireflow.main:app", "--port", "8000"],
+      "cwd": "${workspaceFolder}",
+      "python": "${workspaceFolder}/.venv/bin/python",
+      "jinja": true,
+      "justMyCode": true
+    },
+    {
+      "name": "Pytest: current file (debug)",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "pytest",
+      "args": ["${file}", "-q", "-p", "no:logging"],
+      "cwd": "${workspaceFolder}",
+      "python": "${workspaceFolder}/.venv/bin/python",
+      "justMyCode": true
+    }
+  ]
+}
