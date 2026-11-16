@@ -1,5 +1,7 @@
 """Fake LLMs for tests. Real models cost money and answer differently each time."""
 
+import re
+
 from langchain_core.language_models import GenericFakeChatModel
 from langchain_core.messages import AIMessage
 
@@ -31,3 +33,33 @@ class FakeStructuredModel:
     def _respond(self, prompt_value):
         self.prompts.append(prompt_value.to_string())
         return self.answer
+
+
+class KeywordScorer:
+    """Fake scoring LLM for the screening graph. Parallel calls arrive in any order, so it
+    cannot replay a script. Instead it gives 4 points to every rubric item whose name appears
+    in the resume, quoting that word as evidence, and 0 otherwise."""
+
+    def __init__(self) -> None:
+        self.prompts: list[str] = []
+
+    def with_structured_output(self, schema):
+        self.schema = schema
+        return self._score
+
+    def _score(self, prompt_value):
+        from hireflow.agents.screening.scoring import CriterionScore
+
+        text = prompt_value.to_string()
+        self.prompts.append(text)
+        rubric_part, resume_part = text.split("<resume>", 1)
+        names = re.findall(r"^- (.+?) \((?:MUST HAVE|nice to have)\)$", rubric_part, re.M)
+        criteria = [
+            CriterionScore(
+                criterion=n,
+                score=4 if n.lower() in resume_part.lower() else 0,
+                evidence=n if n.lower() in resume_part.lower() else "",
+            )
+            for n in names
+        ]
+        return self.schema(criteria=criteria, summary="Scored by the fake model.")

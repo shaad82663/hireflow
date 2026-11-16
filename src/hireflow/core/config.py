@@ -34,6 +34,10 @@ class Settings(BaseSettings):
     embedding_dim: int = 384
 
     max_resume_mb: int = 5
+    @property
+    def checkpoint_db_url(self) -> str:
+        """LangGraph's Postgres checkpointer uses psycopg, which wants a plain postgresql:// URL."""
+        return self.database_url.replace("+asyncpg", "")
 
 @lru_cache
 def get_settings() -> Settings:

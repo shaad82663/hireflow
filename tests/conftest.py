@@ -10,8 +10,10 @@ os.environ["EMBEDDING_PROVIDER"] = "fake"  # instant, deterministic, no model do
 
 import pytest
 from httpx import ASGITransport, AsyncClient
+from langgraph.checkpoint.memory import InMemorySaver
 from sqlalchemy import text
 
+from hireflow.api.deps import get_checkpointer
 from hireflow.db.base import Base
 from hireflow.db.session import engine
 from hireflow.main import create_app
@@ -29,7 +31,12 @@ async def fresh_db():
 
 @pytest.fixture
 def app():
-    return create_app()
+    app = create_app()
+    # The test client does not run the startup lifespan, so give each test a fresh
+    # in-memory checkpointer. One test swaps in the real Postgres one.
+    saver = InMemorySaver()
+    app.dependency_overrides[get_checkpointer] = lambda: saver
+    return app
 
 
 @pytest.fixture
