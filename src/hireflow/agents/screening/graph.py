@@ -15,19 +15,19 @@ from hireflow.models.application import Application, ApplicationStage
 from hireflow.models.screening import ScreeningDecision, ScreeningScore
 from hireflow.services import jobs as job_service
 
-class ScreeningState(TypedDict):  # fix: no total=False, so input keys are required and safe to read
-    # input
+class ScreeningState(TypedDict):  
+    
     job_id: int
     shortlist_size: int
     min_score: float
-    # filled by the graph
-    rubric: NotRequired[list[Criterion]]  # fix: NotRequired = not set until a node fills it
-    application_ids: NotRequired[list[int]]  # fix: NotRequired
-    scores: NotRequired[Annotated[list[CandidateScore], operator.add]]  # parallel scorers append here  # fix: NotRequired
-    ranking: NotRequired[list[CandidateScore]]  # fix: NotRequired
-    proposal: NotRequired[list[int]]  # fix: NotRequired
-    decision: NotRequired[dict]  # fix: NotRequired
-    result: NotRequired[dict]  # fix: NotRequired
+    
+    rubric: NotRequired[list[Criterion]]  
+    application_ids: NotRequired[list[int]]  
+    scores: NotRequired[Annotated[list[CandidateScore], operator.add]]  
+    ranking: NotRequired[list[CandidateScore]]  
+    proposal: NotRequired[list[int]]  
+    decision: NotRequired[dict]  
+    result: NotRequired[dict]  
 
 
 class ScoreTask(TypedDict):
@@ -53,12 +53,12 @@ def build_screening_graph(
             ids = list((await session.execute(stmt)).scalars().all())
             return {"rubric": build_rubric(job), "application_ids": ids}
 
-    async def score_candidate(state: ScoreTask) -> dict:  # fix: param must be named "state" for add_node
+    async def score_candidate(state: ScoreTask) -> dict:  
         async with session_factory() as session:
             app = await session.get(
                 Application, state["application_id"], options=[selectinload(Application.candidate)]
             )
-        if app is None:  # fix: session.get can return None
+        if app is None:  
             raise ValueError(f"Application {state['application_id']} not found")
         score = await score_resume(
             model, state["rubric"], app.id, app.resume_text, app.candidate.name
@@ -80,17 +80,17 @@ def build_screening_graph(
 
     def human_review(state: ScreeningState) -> dict:
         decision = interrupt(
-            {"proposal": state.get("proposal", []), "ranking": state.get("ranking", [])}  # fix: .get for NotRequired keys
+            {"proposal": state.get("proposal", []), "ranking": state.get("ranking", [])}  
         )
         return {"decision": decision}
 
     async def apply_decision(state: ScreeningState, config: RunnableConfig) -> dict:
-        decision = state.get("decision", {})  # fix: .get for NotRequired key
+        decision = state.get("decision", {})  
         shortlist, reject = set(decision["shortlist"]), set(decision["reject"])
-        thread_id = config.get("configurable", {})["thread_id"]  # fix: "configurable" is optional in RunnableConfig
+        thread_id = config.get("configurable", {})["thread_id"]  
 
         async with session_factory() as session:
-            for s in state.get("ranking", []):  # fix: .get for NotRequired key
+            for s in state.get("ranking", []):  
                 app_id = s["application_id"]
                 if app_id in shortlist:
                     outcome, stage = ScreeningDecision.SHORTLISTED, ApplicationStage.SHORTLISTED
@@ -101,7 +101,7 @@ def build_screening_graph(
 
                 if stage is not None:
                     app = await session.get(Application, app_id)
-                    if app is not None:  # fix: session.get can return None
+                    if app is not None:  
                         app.stage = stage
                 session.add(
                     ScreeningScore(
@@ -118,16 +118,16 @@ def build_screening_graph(
         return {"result": {"shortlisted": sorted(shortlist), "rejected": sorted(reject)}}
 
 
-# routing 
+
 
     def fan_out(state: ScreeningState) -> list[Send] | str:
-        ids, rubric = state.get("application_ids", []), state.get("rubric", [])  # fix: .get for NotRequired keys
+        ids, rubric = state.get("application_ids", []), state.get("rubric", [])  
         if not ids or not rubric:
             return "rank"
         return [Send("score_candidate", ScoreTask(application_id=i, rubric=rubric)) for i in ids]
 
     def after_rank(state: ScreeningState) -> str:
-        return "human_review" if state.get("ranking") else END  # fix: .get for NotRequired key
+        return "human_review" if state.get("ranking") else END  
 
     builder = StateGraph(ScreeningState)
     builder.add_node("load_job", load_job)

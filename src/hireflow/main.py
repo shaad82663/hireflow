@@ -41,7 +41,7 @@ def create_app() -> FastAPI:
     app.include_router(drafts.router)
     app.include_router(applications.router)
     app.include_router(assistant.router)
-    app.include_router(screenings.router)  # fix: register screening routes
+    app.include_router(screenings.router) 
     app.include_router(web_routes.router)
     return app
 

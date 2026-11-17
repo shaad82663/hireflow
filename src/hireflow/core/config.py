@@ -34,6 +34,16 @@ class Settings(BaseSettings):
     embedding_dim: int = 384
 
     max_resume_mb: int = 5
+
+    # Email and scheduling
+    smtp_host: str = "localhost"
+    smtp_port: int = 1025  # Mailpit's SMTP port on your laptop
+    email_from: str = "HireFlow Recruiting <jobs@hireflow.local>"
+    reply_domain: str = "hireflow.local"  # replies go to interview+<token>@reply_domain
+    inbound_secret: SecretStr = SecretStr("dev-inbound-secret")  # change in production
+    timezone: str = "Asia/Kolkata"
+    interview_minutes: int = 45
+    
     @property
     def checkpoint_db_url(self) -> str:
         """LangGraph's Postgres checkpointer uses psycopg, which wants a plain postgresql:// URL."""
