@@ -63,3 +63,22 @@ class KeywordScorer:
             for n in names
         ]
         return self.schema(criteria=criteria, summary="Scored by the fake model.")
+
+
+class ScriptedStructuredModel:
+    """Fake LLM for agents that call with_structured_output with DIFFERENT schemas.
+    Give it answers in order; each call returns the next answer of the requested type."""
+
+    def __init__(self, *answers) -> None:
+        self.answers = list(answers)
+        self.prompts: list[str] = []
+
+    def with_structured_output(self, schema):
+        def respond(prompt_value):
+            self.prompts.append(prompt_value.to_string())
+            for i, answer in enumerate(self.answers):
+                if isinstance(answer, schema):
+                    return self.answers.pop(i)
+            raise AssertionError(f"No scripted answer left for {schema.__name__}")
+
+        return respond

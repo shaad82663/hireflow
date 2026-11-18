@@ -7,6 +7,7 @@ os.environ["DATABASE_URL"] = os.environ.get(
 )
 os.environ["ENVIRONMENT"] = "test"
 os.environ["EMBEDDING_PROVIDER"] = "fake"  # instant, deterministic, no model download
+os.environ["INBOUND_SECRET"] = "dev-inbound-secret"
 
 import pytest
 from httpx import ASGITransport, AsyncClient

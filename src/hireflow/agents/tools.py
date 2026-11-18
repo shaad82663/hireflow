@@ -2,6 +2,7 @@ from langchain_core.tools import BaseTool, tool
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from hireflow.models.job import JobStatus
+from hireflow.services import interviews as interview_service
 from hireflow.services import jobs as job_service
 from hireflow.services.jobs import JobNotDraftError, JobNotFoundError, JobNotOpenError
 
@@ -59,3 +60,27 @@ def build_job_tools(session_factory: async_sessionmaker[AsyncSession]) -> list[B
         return {"id": job.id, "status": job.status.value}
 
     return [list_jobs, get_job_details, close_job, publish_job]
+
+def build_interview_tools(session_factory: async_sessionmaker[AsyncSession]) -> list[BaseTool]:
+
+    @tool
+    async def schedule_interviews(job_id: int, interviewer_email: str) -> dict:
+        """Start interview scheduling for every SHORTLISTED candidate of a job.
+        Candidates get an email with free slots from the interviewer's calendar.
+        Only use this when the recruiter clearly asks to schedule interviews."""
+        async with session_factory() as session:
+            try:
+                created = await interview_service.start_scheduling_for_job(
+                    session, job_id, interviewer_email
+                )
+            except JobNotFoundError as e:
+                return {"error": str(e)}
+        return {"started": len(created), "interview_ids": [i.id for i in created]}
+
+    @tool
+    async def interview_status(job_id: int) -> list[dict]:
+        """List the interviews of a job: candidate, status (scheduling, booked, ...) and time."""
+        async with session_factory() as session:
+            return await interview_service.list_interviews(session, job_id)
+
+    return [schedule_interviews, interview_status]
