@@ -13,6 +13,7 @@ from hireflow.api.routes import (
     health,
     interviews,
     jobs,
+    memories,
     screenings,
 )
 from hireflow.core.config import get_settings
@@ -59,6 +60,7 @@ def create_app() -> FastAPI:
     app.include_router(assistant.router)
     app.include_router(screenings.router)
     app.include_router(interviews.router)
+    app.include_router(memories.router)
     app.include_router(web_routes.router)
     return app
 

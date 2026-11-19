@@ -5,12 +5,15 @@ from pydantic import BaseModel, Field
 
 from hireflow.agents.assistant import AssistantReply, ask_assistant
 from hireflow.agents.coordinator_tools import build_interview_tools
+from hireflow.agents.memory_tools import build_memory_tools
 from hireflow.agents.resume_tools import build_resume_tools
 from hireflow.agents.tools import build_job_tools
-from hireflow.api.deps import CheckpointerDep, EmbeddingsDep, ModelDep, RecruiterDep
+from hireflow.api.deps import CheckpointerDep, EmbeddingsDep, ModelDep, RecruiterDep, StoreDep
 from hireflow.db.session import SessionLocal
+from hireflow.memory.preferences import list_preferences, preferences_prompt
 
 router = APIRouter(prefix="/api/assistant", tags=["assistant"])
+
 
 class ChatRequest(BaseModel):
     message: str = Field(min_length=2, max_length=2000)
@@ -31,6 +34,7 @@ async def chat(
     model: ModelDep,
     embeddings: EmbeddingsDep,
     checkpointer: CheckpointerDep,
+    store: StoreDep,
     recruiter: RecruiterDep,
 ):
     thread_id = payload.thread_id or f"chat-{recruiter}-{uuid4().hex[:12]}"
@@ -40,13 +44,16 @@ async def chat(
         build_job_tools(SessionLocal)
         + build_resume_tools(SessionLocal, embeddings)
         + build_interview_tools(SessionLocal)  # hands work to the scheduling agent
+        + build_memory_tools(store, recruiter)  # long-term memory for this recruiter only
     )
+    preferences = await list_preferences(store, recruiter)
     return await ask_assistant(
         model,
         tools,
         payload.message,
         thread_id=thread_id,
         checkpointer=checkpointer,
+        extra_system=preferences_prompt(preferences),
     )
 
 

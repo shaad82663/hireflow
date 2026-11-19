@@ -39,10 +39,10 @@ async def test_assistant_endpoint_runs_the_agent_loop(app, client, open_job):
     res = await client.post("/api/assistant/chat", json={"message": "What jobs are open?"})
 
     assert res.status_code == 200
-    assert res.json() == {
-        "reply": "You have 1 open job: Senior Python Engineer in Bengaluru.",
-        "tools_used": ["list_jobs"],
-    }
+    body = res.json()
+    assert body["reply"] == "You have 1 open job: Senior Python Engineer in Bengaluru."
+    assert body["tools_used"] == ["list_jobs"]
+    assert body["thread_id"].startswith("chat-demo-")  # a new conversation was started
 
 
 async def test_assistant_can_close_a_job_when_asked(app, client, open_job):
