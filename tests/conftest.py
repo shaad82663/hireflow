@@ -12,9 +12,10 @@ os.environ["INBOUND_SECRET"] = "dev-inbound-secret"
 import pytest
 from httpx import ASGITransport, AsyncClient
 from langgraph.checkpoint.memory import InMemorySaver
+from langgraph.store.memory import InMemoryStore  # fix: in-memory store for tests
 from sqlalchemy import text
 
-from hireflow.api.deps import get_checkpointer
+from hireflow.api.deps import get_checkpointer, get_store  # fix: added get_store
 from hireflow.db.base import Base
 from hireflow.db.session import engine
 from hireflow.main import create_app
@@ -35,8 +36,9 @@ def app():
     app = create_app()
     # The test client does not run the startup lifespan, so give each test a fresh
     # in-memory checkpointer. One test swaps in the real Postgres one.
-    saver = InMemorySaver()
+    saver, store = InMemorySaver(), InMemoryStore()
     app.dependency_overrides[get_checkpointer] = lambda: saver
+    app.dependency_overrides[get_store] = lambda: store
     return app
 
 

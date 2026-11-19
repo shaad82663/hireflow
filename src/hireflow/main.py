@@ -4,6 +4,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
+from langgraph.store.postgres.aio import AsyncPostgresStore 
 
 from hireflow.api.routes import (
     applications,
@@ -24,9 +25,15 @@ from hireflow.web import routes as web_routes
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     """Runs once at startup (code before yield) and once at shutdown (code after yield)."""
     settings = get_settings()
-    async with AsyncPostgresSaver.from_conn_string(settings.checkpoint_db_url) as checkpointer:
-        await checkpointer.setup()  # creates LangGraph's own tables if missing (safe to repeat)
+    url = settings.checkpoint_db_url
+    async with (
+        AsyncPostgresSaver.from_conn_string(url) as checkpointer,  # short-term: graph state
+        AsyncPostgresStore.from_conn_string(url) as store,  # long-term: memories
+    ):
+        await checkpointer.setup()  # create LangGraph's own tables if missing (safe to repeat)
+        await store.setup()
         app.state.checkpointer = checkpointer
+        app.state.store = store
         yield
 
 

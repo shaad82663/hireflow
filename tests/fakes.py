@@ -82,3 +82,21 @@ class ScriptedStructuredModel:
             raise AssertionError(f"No scripted answer left for {schema.__name__}")
 
         return respond
+
+class RecordingChatModel(GenericFakeChatModel):
+    """Like FakeToolModel, but it also remembers every list of messages it was sent.
+    That lets a test check what the agent 'saw': old turns, summaries, the system prompt.
+    When asked to summarize (by SummarizationMiddleware) it answers without using the script."""
+
+    seen: list = []
+
+    def bind_tools(self, tools, **kwargs):
+        return self
+
+    def _generate(self, messages, stop=None, run_manager=None, **kwargs):
+        if "summar" in messages[-1].text.lower() and "conversation" in messages[-1].text.lower():
+            from langchain_core.outputs import ChatGeneration, ChatResult
+
+            return ChatResult(generations=[ChatGeneration(message=AIMessage("SUMMARY-OF-OLD"))])
+        self.seen.append(list(messages))
+        return super()._generate(messages, stop=stop, run_manager=run_manager, **kwargs)
