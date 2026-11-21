@@ -84,3 +84,39 @@ async def test_score_resume_sends_anonymised_text():
     await score_resume(fake, RUBRIC, 7, "Ravi Kumar. " + RESUME, "Ravi Kumar")
     assert "Ravi" not in fake.prompts[0]
     assert "- Python (MUST HAVE)" in fake.prompts[0]
+
+def test_reworded_names_still_match_by_position():
+    """Long rubric lines get shortened by the LLM; one entry per line still lines up."""
+    reworded = Scorecard(
+        criteria=[
+            CriterionScore(criterion="Python experience", score=4, evidence="Built Python services"),
+            CriterionScore(criterion="FastAPI APIs", score=4, evidence="with FastAPI"),
+            CriterionScore(criterion="AWS cloud", score=3, evidence="AWS Lambda"),
+        ],
+        summary="ok",
+    )
+    result = finalise(7, RUBRIC, reworded, RESUME)
+    assert [c["score"] for c in result["criteria"]] == [4, 4, 3]
+    assert result["must_haves_met"] is True
+
+
+def test_names_copied_with_the_rubric_tag_still_match():
+    tagged = Scorecard(
+        criteria=[  # wrong order on purpose: must match by name, not position
+            CriterionScore(criterion="AWS (nice to have)", score=3, evidence="AWS Lambda"),
+            CriterionScore(criterion="- Python (MUST HAVE)", score=4, evidence="Built Python services"),
+            CriterionScore(criterion="FastAPI (MUST HAVE)", score=4, evidence="with FastAPI"),
+        ],
+        summary="ok",
+    )
+    result = finalise(7, RUBRIC, tagged, RESUME)
+    assert [c["score"] for c in result["criteria"]] == [4, 4, 3]
+
+
+def test_evidence_tolerates_quote_marks_dashes_and_ellipsis():
+    resume = "Led the team – 4 engineers. Built Python services with FastAPI."
+    assert evidence_is_real('"Built Python services"', resume)
+    assert evidence_is_real("Led the team — 4 engineers", resume)
+    assert evidence_is_real("Led the team ... Built Python services", resume)
+    assert not evidence_is_real("Led the team … 10 years of Kubernetes", resume)  # every part must be real
+    assert not evidence_is_real('""', resume)

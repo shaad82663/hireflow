@@ -56,6 +56,8 @@ SCORING_PROMPT = ChatPromptTemplate.from_messages(
             "system",
             "You screen resumes against a fixed rubric. Score every criterion from 0 to 5.\n"
             "Rules:\n"
+            "- Return exactly one entry per rubric line, in the same order as the rubric.\n"
+            "- Copy each criterion name character for character; do not shorten or reword it.\n"
             "- Use ONLY the resume text. Quote evidence exactly; do not paraphrase in the quote.\n"
             "- If there is no evidence, the score is 0 and the evidence is empty.\n"
             "- Personal details are hidden on purpose. Never guess them.\n"
@@ -85,13 +87,28 @@ def anonymise(text: str, candidate_name: str) -> str:
     return text
 
 
+# fix: the LLM and PDFs use different quote/dash characters; treat them as the same
+_SAME_CHARS = str.maketrans({"‘": "'", "’": "'", "“": '"', "”": '"', "–": "-", "—": "-"})
+_RUBRIC_TAG = re.compile(r"\s*\((must have|nice to have)\)\s*$")
+
+
 def _normalise(s: str) -> str:
-    return re.sub(r"\s+", " ", s).strip().lower()
+    return re.sub(r"\s+", " ", s.translate(_SAME_CHARS)).strip().lower()
+
+
+def _name_key(name: str) -> str:
+    """fix: the LLM often copies the whole rubric line, '- Python (MUST HAVE)'; keep only the name."""
+    return _RUBRIC_TAG.sub("", _normalise(name)).lstrip("- ").strip()
 
 
 def evidence_is_real(evidence: str, resume: str) -> bool:
-    """True if the quote really appears in the resume (ignoring case and spacing)."""
-    return bool(evidence.strip()) and _normalise(evidence) in _normalise(resume)
+    """True if the quote really appears in the resume (ignoring case and spacing).
+    fix: surrounding quote marks are ignored, and a quote joined with '...' counts only if
+    EVERY part really appears in the resume."""
+    text = _normalise(resume)
+    parts = [p.strip(" \"'") for p in re.split(r"\.\.\.|…", _normalise(evidence))]
+    parts = [p for p in parts if p]
+    return bool(parts) and all(p in text for p in parts)
 
 
 # ---------- Scoring one candidate ----------
@@ -109,11 +126,14 @@ def finalise(
     application_id: int, rubric: list[Criterion], card: Scorecard, resume: str
 ) -> CandidateScore:
     """Turn the LLM's scorecard into a trusted result. Code, not the LLM, does the maths."""
-    by_name = {_normalise(c.criterion): c for c in card.criteria}
+    by_name = {_name_key(c.criterion): c for c in card.criteria}  # fix: match without the tag
+    same_length = len(card.criteria) == len(rubric)
     rows, earned, possible, must_ok = [], 0, 0, True
 
-    for crit in rubric:
-        llm = by_name.get(_normalise(crit["name"]))
+    for i, crit in enumerate(rubric):
+        llm = by_name.get(_name_key(crit["name"]))
+        if llm is None and same_length:  
+            llm = card.criteria[i]
         score = llm.score if llm else 0
         evidence = llm.evidence if llm else ""
         verified = evidence_is_real(evidence, resume)

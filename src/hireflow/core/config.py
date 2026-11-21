@@ -43,6 +43,7 @@ class Settings(BaseSettings):
     inbound_secret: SecretStr = SecretStr("dev-inbound-secret")  # change in production
     timezone: str = "Asia/Kolkata"
     interview_minutes: int = 45
+    mcp_allow_writes: bool = False
     
     @property
     def checkpoint_db_url(self) -> str:

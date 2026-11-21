@@ -12,10 +12,10 @@ os.environ["INBOUND_SECRET"] = "dev-inbound-secret"
 import pytest
 from httpx import ASGITransport, AsyncClient
 from langgraph.checkpoint.memory import InMemorySaver
-from langgraph.store.memory import InMemoryStore  # fix: in-memory store for tests
+from langgraph.store.memory import InMemoryStore  
 from sqlalchemy import text
 
-from hireflow.api.deps import get_checkpointer, get_store  # fix: added get_store
+from hireflow.api.deps import get_checkpointer, get_store  
 from hireflow.db.base import Base
 from hireflow.db.session import engine
 from hireflow.main import create_app
