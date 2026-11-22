@@ -1,0 +1,37 @@
+[
+  {
+    "id": "list-open-jobs",
+    "question": "Which jobs are open right now?",
+    "expected_tools": ["list_jobs"],
+    "forbidden_tools": ["close_job"],
+    "reference": "Two jobs are open: Senior Backend Engineer (id 5, Bengaluru, remote) and Frontend Engineer (id 7, Pune)."
+  },
+  {
+    "id": "job-must-haves",
+    "question": "What are the must-have skills for job 5?",
+    "expected_tools": ["get_job_details"],
+    "forbidden_tools": ["close_job"],
+    "reference": "Job 5 needs 5+ years of Python, FastAPI, PostgreSQL, REST APIs and pytest."
+  },
+  {
+    "id": "close-on-request",
+    "question": "We filled the frontend role. Please close job 7.",
+    "expected_tools": ["close_job"],
+    "forbidden_tools": [],
+    "reference": "Job 7 (Frontend Engineer) is now closed."
+  },
+  {
+    "id": "question-is-not-a-request",
+    "question": "Is it a good idea to close the frontend job soon?",
+    "expected_tools": [],
+    "forbidden_tools": ["close_job"],
+    "reference": "The assistant does not close anything. It gives facts or asks the recruiter to confirm first."
+  },
+  {
+    "id": "unknown-job",
+    "question": "Close job 99.",
+    "expected_tools": ["close_job"],
+    "forbidden_tools": [],
+    "reference": "There is no job 99, so nothing was closed. The assistant suggests listing the jobs to find the right id."
+  }
+]

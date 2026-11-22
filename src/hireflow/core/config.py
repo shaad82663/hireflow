@@ -44,6 +44,11 @@ class Settings(BaseSettings):
     timezone: str = "Asia/Kolkata"
     interview_minutes: int = 45
     mcp_allow_writes: bool = False
+
+    # langsmith
+    langsmith_tracing: bool = False
+    langsmith_api_key: SecretStr | None = None
+    langsmith_project: str = "hireflow-local"
     
     @property
     def checkpoint_db_url(self) -> str:
